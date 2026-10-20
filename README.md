@@ -34,7 +34,7 @@
 
 | 能力 | 实现 | 价值 |
 | --- | --- | --- |
-| 多智能体编排 | LangGraph `StateGraph`，6 个节点 + 条件边 | 每一步可观测、可单测 |
+| 多智能体编排 | LangGraph `StateGraph`，6 个业务节点 + 失败终止节点 | 每一步可观测、可单测 |
 | 指标语义层 | `metrics.yaml` + `SemanticRegistry` | 口径唯一事实来源，防止指标漂移 |
 | Text-to-SQL | DeepSeek 生成，模板 SQL 兜底 | 模型故障也不阻断分析 |
 | SQL 自纠错 | 报错回传 CodeGen，最多 3 次 | 首次 + 3 次重试后人工介入 |
@@ -336,7 +336,7 @@ pytest -q tests/test_pipeline.py -k "retry or attribution"
 
 ```text
 $ pytest
-41 passed, 1 warning in 1.65s
+41 passed, 1 warning in 1.64s
 ```
 
 > 测试全程使用 MockLLM，真实 API 调用次数为 **0**。
