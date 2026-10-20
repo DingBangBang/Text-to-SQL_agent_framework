@@ -325,8 +325,6 @@ pytest -q tests/test_pipeline.py -k "retry or attribution"
 
 测试使用 `tests/conftest.py` 中的小样本 DuckDB（800 用户 / 12,000 交易 / 30 天）和固定日期 `2026-10-20`，因此**完全确定性、无需网络**。
 
-<!-- TEST_RESULTS_TABLE -->
-
 | 测试文件 | 覆盖点 | 用例数 | 结果 |
 | --- | --- | ---: | --- |
 | `test_pipeline.py` | Router→Insight 全链路、归因、缺失信息反问、SQL 自纠错、3 次重试上限、坏 JSON 兜底 | 7 | ✅ |
@@ -344,8 +342,6 @@ $ pytest
 > 测试全程使用 MockLLM，真实 API 调用次数为 **0**。
 
 ## 11. 端到端真实运行
-
-<!-- E2E_SECTION -->
 
 ```bash
 ./run_e2e_test.sh     # 单次真实调用；已存在报告时默认拒绝重跑
