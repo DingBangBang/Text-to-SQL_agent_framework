@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760"
+viewBox="0 0 1280 760">
+<rect width="1280" height="760" fill="#f5f7fb"/>
+<rect x="0" y="0" width="290" height="760" fill="#0f172a"/>
+<text x="24" y="46" fill="#e2e8f0" font-family="PingFang SC, sans-serif"
+ font-size="17" font-weight="700">Schema &amp; Metrics</text>
+<text x="24" y="86" fill="#93c5fd" font-family="monospace" font-size="12.5">users(user_id, register_date, tier_level)</text>
+<text x="24" y="112" fill="#93c5fd" font-family="monospace" font-size="12.5">trades(trade_id, user_id, trade_date,</text>
+<text x="24" y="132" fill="#93c5fd" font-family="monospace" font-size="12.5">  symbol, trade_volume_usd, fee_usd, chain_type)</text>
+<text x="24" y="176" fill="#e2e8f0" font-family="PingFang SC, sans-serif"
+ font-size="14" font-weight="600">指标口径</text>
+<text x="24" y="204" fill="#cbd5e1" font-family="PingFang SC, sans-serif" font-size="12.5">活跃用户：窗口内 distinct user_id</text>
+<text x="24" y="228" fill="#cbd5e1" font-family="PingFang SC, sans-serif" font-size="12.5">交易量：SUM(trade_volume_usd)</text>
+<text x="24" y="252" fill="#cbd5e1" font-family="PingFang SC, sans-serif" font-size="12.5">链上交易：chain_type = 'onchain'</text>
+<rect x="24" y="690" width="242" height="42" rx="10" fill="#1d4ed8"/>
+<text x="52" y="716" fill="#ffffff" font-family="PingFang SC, sans-serif" font-size="13">Mock / DeepSeek 模式切换</text>
+<text x="322" y="48" fill="#111827" font-family="PingFang SC, sans-serif"
+ font-size="22" font-weight="700">Text-to-SQL 业务自主分析 Agent</text>
+<text x="322" y="76" fill="#6b7280" font-family="PingFang SC, sans-serif" font-size="13">本地 DuckDB · LangGraph · 成本受控</text>
+<rect x="322" y="100" width="900" height="86" rx="14" fill="#ffffff" stroke="#e5e7eb"/>
+<text x="344" y="132" fill="#111827" font-family="PingFang SC, sans-serif" font-size="14" font-weight="600">为什么上周链上交易量跌了？</text>
+<text x="344" y="160" fill="#6b7280" font-family="PingFang SC, sans-serif" font-size="12">Router → Semantic → CodeGen → Execution → Attribution → Insight</text>
+<rect x="322" y="202" width="900" height="250" rx="14" fill="#ffffff" stroke="#e5e7eb"/>
+<text x="344" y="232" fill="#1e3a8a" font-family="PingFang SC, sans-serif" font-size="14" font-weight="600">链上交易量 · 过去 7 天（每日）</text>
+<polyline points="360,410 440,388 520,400 600,355 680,368 760,300 840,318 920,270 1000,286 1080,240 1160,258"
+ fill="none" stroke="#2563eb" stroke-width="3"/>
+<polyline points="360,430 440,420 520,425 600,408 680,412 760,395 840,400 920,388 1000,392 1080,380 1160,384"
+ fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 5"/>
+<line x1="360" y1="440" x2="1170" y2="440" stroke="#e5e7eb"/>
+<rect x="322" y="470" width="438" height="230" rx="14" fill="#ffffff" stroke="#e5e7eb"/>
+<text x="344" y="500" fill="#111827" font-family="PingFang SC, sans-serif" font-size="14" font-weight="600">归因：按币种</text>
+<rect x="344" y="520" width="390" height="26" rx="5" fill="#dbeafe"/>
+<rect x="344" y="556" width="300" height="26" rx="5" fill="#dbeafe"/>
+<rect x="344" y="592" width="240" height="26" rx="5" fill="#dbeafe"/>
+<rect x="344" y="628" width="370" height="26" rx="5" fill="#fee2e2"/>
+<rect x="784" y="470" width="438" height="230" rx="14" fill="#ffffff" stroke="#e5e7eb"/>
+<text x="806" y="500" fill="#111827" font-family="PingFang SC, sans-serif" font-size="14" font-weight="600">智能洞察</text>
+<text x="806" y="530" fill="#059669" font-family="PingFang SC, sans-serif" font-size="13" font-weight="600">结论</text>
+<text x="806" y="556" fill="#374151" font-family="PingFang SC, sans-serif" font-size="12">链上交易量环比下滑，主因 BTC 与 ETH 链上</text>
+<text x="806" y="578" fill="#374151" font-family="PingFang SC, sans-serif" font-size="12">大额成交减少，建议排查跨链桥拥堵与做市深度。</text>
+<text x="806" y="610" fill="#1e3a8a" font-family="PingFang SC, sans-serif" font-size="13" font-weight="600">数据支撑</text>
+<text x="806" y="634" fill="#374151" font-family="PingFang SC, sans-serif" font-size="12">当前值 vs 上一周期，按日/币种/链类型拆解</text>
+<text x="640" y="742" fill="#9ca3af" font-family="PingFang SC, sans-serif"
+ font-size="11" text-anchor="middle">Streamlit dashboard · placeholder (replace with a real screenshot after `streamlit run app/dashboard.py`)</text>
+</svg>

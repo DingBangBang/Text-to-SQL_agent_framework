@@ -1,0 +1,18 @@
+[project]
+name = "text-to-sql-agent-framework"
+version = "0.1.0"
+description = "Local-first, budget-guarded Text-to-SQL analytics agent (LangGraph + DuckDB + DeepSeek)"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "e2e: end-to-end tests that may call a real LLM (deselected by default)",
+]
+
+[tool.pytest]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

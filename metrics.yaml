@@ -1,0 +1,191 @@
+version: 1
+
+database:
+  path: data/analytics.duckdb
+  description: 本地 DuckDB 数仓，原始明细数据不离开本机
+
+default_time_range: last_7_days
+
+# 时间窗口口径：所有窗口都包含 end_date 当天，按自然日闭区间计算。
+time_ranges:
+  today:
+    label: 今天
+    mode: trailing
+    days: 1
+  yesterday:
+    label: 昨天
+    mode: yesterday
+  last_7_days:
+    label: 过去7天
+    mode: trailing
+    days: 7
+  last_14_days:
+    label: 过去14天
+    mode: trailing
+    days: 14
+  last_30_days:
+    label: 过去30天
+    mode: trailing
+    days: 30
+  last_week:
+    label: 上周
+    mode: previous_week
+  this_month:
+    label: 本月
+    mode: current_month
+  last_month:
+    label: 上月
+    mode: previous_month
+
+tables:
+  users:
+    description: 注册用户维表
+    primary_key: user_id
+    columns:
+      user_id: BIGINT
+      register_date: DATE
+      tier_level: VARCHAR
+  trades:
+    description: 交易明细事实表（30 天滚动窗口）
+    primary_key: trade_id
+    columns:
+      trade_id: BIGINT
+      user_id: BIGINT
+      trade_date: DATE
+      symbol: VARCHAR
+      trade_volume_usd: DOUBLE
+      fee_usd: DOUBLE
+      chain_type: VARCHAR
+
+# 指标语义层：自然语言 -> SQL 字段/表达式的唯一事实来源。
+metrics:
+  active_users:
+    label: 活跃用户
+    description: 统计窗口内有交易记录的独立用户数（去重 user_id）
+    table: trades
+    alias: t
+    time_column: trade_date
+    expression: COUNT(DISTINCT t.user_id)
+    value_column: active_users
+    filters: []
+    unit: 人
+    aggregation: distinct_count
+    synonyms: [活跃用户, 活跃地址, 活跃人数, 用户数, DAU, active user, active users]
+    dimensions:
+      trade_date:
+        label: 日期
+        expr: CAST(t.trade_date AS DATE)
+        type: time
+      symbol:
+        label: 币种
+        expr: t.symbol
+        type: category
+      chain_type:
+        label: 链类型
+        expr: t.chain_type
+        type: category
+
+  trade_volume:
+    label: 交易量
+    description: 统计窗口内全部交易的名义成交额（USD）
+    table: trades
+    alias: t
+    time_column: trade_date
+    expression: SUM(t.trade_volume_usd)
+    value_column: trade_volume_usd
+    filters: []
+    unit: USD
+    aggregation: sum
+    synonyms: [交易量, 成交量, 成交额, 名义交易额, 交易额, volume, GMV]
+    dimensions:
+      trade_date:
+        label: 日期
+        expr: CAST(t.trade_date AS DATE)
+        type: time
+      symbol:
+        label: 币种
+        expr: t.symbol
+        type: category
+      chain_type:
+        label: 链类型
+        expr: t.chain_type
+        type: category
+
+  onchain_volume:
+    label: 链上交易量
+    description: 统计窗口内 chain_type = 'onchain' 的交易量（USD）
+    table: trades
+    alias: t
+    time_column: trade_date
+    expression: SUM(t.trade_volume_usd)
+    value_column: onchain_volume_usd
+    filters:
+      - "t.chain_type = 'onchain'"
+    unit: USD
+    aggregation: sum
+    synonyms: [链上交易量, 链上成交量, 链上交易额, 链上, onchain volume, on-chain volume]
+    dimensions:
+      trade_date:
+        label: 日期
+        expr: CAST(t.trade_date AS DATE)
+        type: time
+      symbol:
+        label: 币种
+        expr: t.symbol
+        type: category
+      chain_type:
+        label: 链类型
+        expr: t.chain_type
+        type: category
+
+  fee_revenue:
+    label: 手续费收入
+    description: 统计窗口内平台收取的手续费总额（USD）
+    table: trades
+    alias: t
+    time_column: trade_date
+    expression: SUM(t.fee_usd)
+    value_column: fee_usd
+    filters: []
+    unit: USD
+    aggregation: sum
+    synonyms: [手续费, 手续费收入, 平台收入, fee, revenue, fee revenue]
+    dimensions:
+      trade_date:
+        label: 日期
+        expr: CAST(t.trade_date AS DATE)
+        type: time
+      symbol:
+        label: 币种
+        expr: t.symbol
+        type: category
+      chain_type:
+        label: 链类型
+        expr: t.chain_type
+        type: category
+
+  avg_trade_size:
+    label: 平均单笔交易额
+    description: 统计窗口内单笔交易的平均名义金额（USD）
+    table: trades
+    alias: t
+    time_column: trade_date
+    expression: AVG(t.trade_volume_usd)
+    value_column: avg_trade_size_usd
+    filters: []
+    unit: USD
+    aggregation: avg
+    synonyms: [平均单笔交易额, 客单价, 单笔金额, 平均交易额, average trade size, avg trade size]
+    dimensions:
+      trade_date:
+        label: 日期
+        expr: CAST(t.trade_date AS DATE)
+        type: time
+      symbol:
+        label: 币种
+        expr: t.symbol
+        type: category
+      chain_type:
+        label: 链类型
+        expr: t.chain_type
+        type: category

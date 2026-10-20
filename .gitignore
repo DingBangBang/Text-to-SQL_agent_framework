@@ -1,0 +1,35 @@
+# --- Secrets ---
+environment.env
+.env
+*.pem
+
+# --- Local warehouse / generated data ---
+data/*.duckdb
+data/*.duckdb.wal
+data/*.csv
+data/*.parquet
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Streamlit ---
+.streamlit/secrets.toml
+
+# --- OS / IDE ---
+.DS_Store
+.idea/
+.vscode/
+
+# --- E2E transient artifacts (HTML report is committed on purpose) ---
+outputs/e2e_result.json
+outputs/*_meta.json
+outputs/e2e_preview_mock.html
+outputs/e2e_preview_mock.json
+outputs/*.log
