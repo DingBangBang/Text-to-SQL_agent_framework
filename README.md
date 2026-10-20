@@ -9,6 +9,9 @@
 ![LLM](https://img.shields.io/badge/LLM-DeepSeek%20(optional)-4D6BFE)
 ![Cost](https://img.shields.io/badge/%E5%8D%95%E6%AC%A1%E6%88%90%E6%9C%AC-%3C%20%C2%A51-059669)
 ![License](https://img.shields.io/badge/License-MIT-blue)
+[![CI](https://github.com/DingBangBang/Text-to-SQL_agent_framework/actions/workflows/ci.yml/badge.svg)](https://github.com/DingBangBang/Text-to-SQL_agent_framework/actions/workflows/ci.yml)
+
+> 仓库地址：[github.com/DingBangBang/Text-to-SQL_agent_framework](https://github.com/DingBangBang/Text-to-SQL_agent_framework)
 
 ---
 
@@ -232,6 +235,7 @@ Text-to-SQL_agent_framework/
 │   └── test_reporting.py         # HTML/JSON/占位图
 ├── scripts/run_e2e_test.py       # 单次 E2E + HTML 报告
 ├── run_e2e_test.sh               # conda 环境封装 + 防重复计费
+├── .github/workflows/ci.yml      # GitHub Actions：离线测试（MockLLM）
 ├── simulate_data.py              # 20k 用户 / 100k 交易 / 30 天
 ├── metrics.yaml                  # 指标口径（唯一事实来源）
 ├── environment.yml               # conda 环境 analytics-agent

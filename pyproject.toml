@@ -8,11 +8,9 @@ readme = "README.md"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-markers = [
-    "e2e: end-to-end tests that may call a real LLM (deselected by default)",
-]
-
-[tool.pytest]
 filterwarnings = [
     "ignore::DeprecationWarning",
+]
+markers = [
+    "e2e: end-to-end tests that may call a real LLM (deselected by default)",
 ]
