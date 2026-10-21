@@ -12,6 +12,8 @@
 [![CI](https://github.com/DingBangBang/Text-to-SQL_agent_framework/actions/workflows/ci.yml/badge.svg)](https://github.com/DingBangBang/Text-to-SQL_agent_framework/actions/workflows/ci.yml)
 
 > 仓库地址：[github.com/DingBangBang/Text-to-SQL_agent_framework](https://github.com/DingBangBang/Text-to-SQL_agent_framework)
+>
+> 文档语言：**简体中文** ｜ [English](README_en.md)
 
 ---
 
@@ -189,9 +191,10 @@ python simulate_data.py --force
 # 4) 离线测试（不消耗任何 API）
 pytest -q
 
-# 5) 启动看板（默认 MockLLM）
-streamlit run app/dashboard.py
-#    浏览器打开 http://localhost:8501
+# 5) 启动看板（默认 MockLLM，端口 8601）
+make dashboard
+#    或：streamlit run app/dashboard.py --server.port 8601
+#    浏览器打开 http://localhost:8601
 
 # 6) 真实端到端（仅一次，生成 HTML 报告）
 ./run_e2e_test.sh
@@ -235,7 +238,9 @@ Text-to-SQL_agent_framework/
 │   └── test_reporting.py         # HTML/JSON/占位图
 ├── scripts/run_e2e_test.py       # 单次 E2E + HTML 报告
 ├── run_e2e_test.sh               # conda 环境封装 + 防重复计费
+├── README_en.md                  # 英文文档（美元计价）
 ├── .github/workflows/ci.yml      # GitHub Actions：离线测试（MockLLM）
+├── .streamlit/config.toml        # 默认端口 8601，关闭遥测
 ├── simulate_data.py              # 20k 用户 / 100k 交易 / 30 天
 ├── metrics.yaml                  # 指标口径（唯一事实来源）
 ├── environment.yml               # conda 环境 analytics-agent
@@ -365,7 +370,7 @@ $ pytest
 
 **📄 完整报告：[outputs/e2e_result.html](outputs/e2e_result.html)**（自包含 HTML，含 Plotly 图、SQL、归因表与完整洞察）
 
-**Streamlit 界面（占位截图，可用 `streamlit run app/dashboard.py` 替换为真实截图）**
+**Streamlit 界面（占位截图，可用 `make dashboard` 启动后替换为真实截图）**
 
 ![Streamlit dashboard](outputs/streamlit_dashboard_placeholder.svg)
 
@@ -393,10 +398,11 @@ $ pytest
 侧栏固定展示：本地 Schema（含行数）、`metrics.yaml` 指标口径、成本护栏参数、示例问题，以及 Mock/DeepSeek 模式切换。
 
 ```bash
-streamlit run app/dashboard.py
+make dashboard
+# equivalent to: streamlit run app/dashboard.py --server.port 8601
 ```
 
-> 默认 Mock 模式，适合演示与开发；切换到 DeepSeek 需要 `environment.env` 中配置 Key，且每次运行都受 3,000 tokens / ¥1 上限保护。
+> 端口默认 **8601**（8501 常被其他本地服务占用），由 `.streamlit/config.toml` 与 `STREAMLIT_PORT` 控制。默认 Mock 模式，适合演示与开发；切换到 DeepSeek 需要 `environment.env` 中配置 Key，且每次运行都受 3,000 tokens / ¥1 上限保护。
 
 ## 13. 安全边界（威胁模型）
 
@@ -417,7 +423,7 @@ streamlit run app/dashboard.py
 3. **非可加指标的归因**：`active_users` 使用 `COUNT(DISTINCT)`，按维度拆解的 `change_value` 之和不等于总量变化；报告已在文案中避免将其解释为严格加总。
 4. **语义等价性**：沙箱保证 SQL 只读、只查允许的表，但不做“业务口径等价性证明”；因此 Prompt 中强制原样使用度量表达式，并在 UI 暴露 SQL 供人工复核。
 5. **并发与规模**：DuckDB 为单机分析型引擎，适合本地/单实例；高并发写入或 TB 级数据需替换为只读副本/湖仓。
-6. **截图**：仓库内为 SVG 占位图；运行 `streamlit run app/dashboard.py` 后可替换为真实截图。
+6. **截图**：仓库内为 SVG 占位图；运行 `make dashboard` 后可替换为真实截图。
 7. **MockLLM 覆盖范围**：规则覆盖本项目指标与时间窗口；新增指标需在 `metrics.yaml` 增加同义词，Mock 才能自动识别（真实 LLM 无此限制）。
 
 ## 15. 故障排查

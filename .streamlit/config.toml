@@ -1,0 +1,7 @@
+[server]
+# 8501 is commonly occupied by other local services; this project uses 8601.
+port = 8601
+headless = true
+
+[browser]
+gatherUsageStats = false
