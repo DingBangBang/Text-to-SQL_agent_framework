@@ -155,9 +155,9 @@ The single real E2E run measured:
 
 ```text
 3 calls: Router + CodeGen + Insight
-Input   1,520 tokens × $0.28 / 1M = $0.00043
-Output    592 tokens × $0.42 / 1M = $0.00025
-Total                             = $0.00067   (~0.5% of the $0.14 cap)
+Input   1,520 tokens × $0.28 / 1M = $0.0004256
+Output    592 tokens × $0.42 / 1M = $0.0002486
+Total                             ≈ $0.0006742  (~0.5% of the $0.14 cap)
 ```
 
 Even with three SQL self-corrections (up to 7 calls), the same unit prices put a run **under $0.003** — more than an order of magnitude below the $0.14 cap. The KPI card and footer of `outputs/e2e_result.html` show the actual token usage and cost of each run.
@@ -375,7 +375,7 @@ $ pytest
 | Rows returned | 7 (daily) |
 | Attribution dimension | `symbol` (`chain_type` is pinned by the metric filter and skipped) |
 | Input / output tokens | **1,520 / 592** (2,112 total) |
-| Measured cost | **$0.00067** (~0.5% of the $0.14 cap) |
+| Measured cost | **$0.000674** (~0.5% of the $0.14 cap) |
 | Total / SQL latency | 5.89 s / 24 ms |
 | Status | `completed` |
 
