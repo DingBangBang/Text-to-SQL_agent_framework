@@ -74,6 +74,18 @@ def test_attribution_dimensions_skip_pinned_filters(registry: SemanticRegistry):
     ]
 
 
+def test_english_labels_and_windows(registry: SemanticRegistry):
+    assert registry.get("onchain_volume").display_label("en") == "On-chain volume"
+    assert "chain_type" in registry.get("onchain_volume").display_description("en")
+    window = registry.resolve_time_range("last_week", TODAY, language="en")
+    assert window.label == "Last week"
+    previous = registry.previous_window(window, language="en")
+    assert previous.label.startswith("Previous period")
+    catalog = registry.catalog_text("en")
+    assert "On-chain volume" in catalog
+    assert "unit:" in catalog
+
+
 def test_bad_mode_in_yaml_raises():
     broken = SemanticRegistry(
         {

@@ -13,6 +13,7 @@ from typing import Any
 import pandas as pd
 
 from .config import Settings
+from .i18n import dimension_label
 
 MAX_TABLE_ROWS = 25
 
@@ -191,7 +192,9 @@ def _format_delta(value: Any, unit: str) -> str:
     return sign + format_value(abs(number), unit)
 
 
-def build_insight_context(state: dict[str, Any], unit: str = "") -> dict[str, Any]:
+def build_insight_context(
+    state: dict[str, Any], unit: str = "", language: str = "zh"
+) -> dict[str, Any]:
     """Derive driver/peak facts from attribution output for prompt + MockLLM."""
     attribution = state.get("attribution") or {}
     daily: pd.DataFrame | None = state.get("result_df")
@@ -225,7 +228,9 @@ def build_insight_context(state: dict[str, Any], unit: str = "") -> dict[str, An
 
     def _enrich(item: dict[str, Any]) -> dict[str, Any]:
         return {
-            "name": f"{item['dimension']}={item['name']}",
+            "name": (
+                f"{dimension_label(item['dimension'], language)}={item['name']}"
+            ),
             "dimension": item["dimension"],
             "change": _format_delta(item["change_value"], unit),
             "change_pct": format_pct(item.get("change_pct")),
@@ -268,16 +273,23 @@ def build_insight_context(state: dict[str, Any], unit: str = "") -> dict[str, An
                 peak = None
 
     window = attribution.get("window") or {}
-    window_label = (
-        f"{window.get('label', state.get('time_range', ''))}"
-        f"（{window.get('start', '')} ~ {window.get('end', '')}）"
-        if window
-        else str(state.get("time_range", ""))
-    )
+    if window:
+        start = window.get("start", "")
+        end = window.get("end", "")
+        label = window.get("label", state.get("time_range", ""))
+        window_label = (
+            f"{label} ({start} ~ {end})"
+            if language == "en"
+            else f"{label}（{start} ~ {end}）"
+        )
+    else:
+        window_label = str(state.get("time_range", ""))
     metric = state.get("semantic") or {}
 
     return {
-        "metric_label": metric.get("label", state.get("metric", "指标")),
+        "metric_label": metric.get(
+            "label", state.get("metric", "metric" if language == "en" else "指标")
+        ),
         "metric_key": metric.get("key", state.get("metric", "")),
         "window_label": window_label,
         "current_value": format_value(current, unit),
@@ -290,15 +302,27 @@ def build_insight_context(state: dict[str, Any], unit: str = "") -> dict[str, An
 
 
 def attribution_tables_markdown(
-    state: dict[str, Any], unit: str = "", max_rows: int = 8
+    state: dict[str, Any],
+    unit: str = "",
+    max_rows: int = 8,
+    language: str = "zh",
 ) -> str:
     attribution = state.get("attribution") or {}
     breakdowns: dict[str, pd.DataFrame] = attribution.get("breakdowns") or {}
     if not breakdowns:
-        return "_本次为查询型问题，未执行多维归因。_"
+        return (
+            "_No attribution was run for this query._"
+            if language == "en"
+            else "_本次为查询型问题，未执行多维归因。_"
+        )
     blocks = []
     for dimension, frame in breakdowns.items():
-        blocks.append(f"**按 {dimension} 拆解**\n")
+        title = (
+            f"**Breakdown by {dimension}**"
+            if language == "en"
+            else f"**按 {dimension} 拆解**"
+        )
+        blocks.append(title + "\n")
         blocks.append(df_to_markdown(frame, max_rows=max_rows, unit=unit))
     return "\n\n".join(blocks)
 

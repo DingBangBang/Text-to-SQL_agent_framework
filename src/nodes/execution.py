@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..db import execute_query
+from ..i18n import tr
 from ..state import AgentContext, trace_entry
 
 
@@ -18,16 +19,23 @@ def execution_node(state: dict[str, Any], *, ctx: AgentContext) -> dict[str, Any
         )
     except Exception as exc:  # execution errors are designed to trigger repair
         message = f"{type(exc).__name__}: {exc}"
-        detail = f"第 {attempt} 次执行失败：{message[:220]}"
+        detail = tr(
+            ctx.language,
+            f"第 {attempt} 次执行失败：{message[:220]}",
+            f"Attempt {attempt} failed: {message[:220]}",
+        )
         return {
             "sql_error": message,
             "status": "execution_error",
             "trace": [trace_entry("Execution", detail)],
         }
 
-    detail = (
+    detail = tr(
+        ctx.language,
         f"执行成功：{result.row_count} 行，{result.elapsed_ms} ms"
-        + ("（已截断）" if result.truncated else "")
+        + ("（已截断）" if result.truncated else ""),
+        f"Executed successfully: {result.row_count} rows in {result.elapsed_ms} ms"
+        + (" (truncated)" if result.truncated else ""),
     )
     return {
         "result_df": result.df,

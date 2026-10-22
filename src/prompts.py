@@ -21,6 +21,24 @@ ROUTER_SYSTEM = """你是「链上数据分析 Agent」的意图路由器。只�
 3. 只能使用上面列出的 key，不得编造指标或时间窗口。
 4. 只输出一个 JSON 对象。"""
 
+ROUTER_SYSTEM_EN = """You are the intent router for an on-chain analytics agent. Output JSON only, no prose.
+Available metrics (key | name | definition | synonyms):
+{catalog}
+
+Available time windows (key | name):
+{time_ranges}
+
+Output schema:
+{{"metric": "metric key or null", "time_range": "window key or null",
+  "action": "query or attribution",
+  "clarification": "one English question when information is missing, otherwise an empty string"}}
+
+Rules:
+1. Use action=attribution for why/explain/driver/breakdown/which asset dragged/drop/increase questions; otherwise query.
+2. If metric or time_range cannot be determined, set it to null and ask only for the missing field.
+3. Use only the keys listed above; never invent metrics or time windows.
+4. Output exactly one JSON object."""
+
 CODEGEN_SYSTEM = """你是资深 DuckDB 分析工程师。根据指标契约和表结构生成一条只读 SQL。
 硬性要求：
 1. 只输出 SQL，不要 Markdown 代码块，不要解释。
@@ -51,6 +69,36 @@ REPAIR_BLOCK = """
 {error}
 """
 
+CODEGEN_SYSTEM_EN = """You are a senior DuckDB analytics engineer. Generate one read-only SQL statement from the metric contract and schema.
+Hard requirements:
+1. Output SQL only; no Markdown fences, no explanation.
+2. Use the metric contract's measure expression and fixed filters verbatim; never change the business definition.
+3. Filter the time column using the given closed date range.
+4. Only SELECT / WITH is allowed, and only the given tables may be queried.
+5. Sort by date ascending or metric value descending; return at most 500 rows."""
+
+CODEGEN_USER_EN = """User question: {question}
+
+Metric contract:
+{metric_reference}
+
+Time window: {window_label} ({start} to {end}, inclusive)
+
+Schema:
+{schema}
+
+Output requirement: {output_requirement}
+{repair_block}"""
+
+REPAIR_BLOCK_EN = """
+The previous SQL failed. Fix it and return the complete SQL again.
+Previous SQL:
+{previous_sql}
+
+Database error:
+{error}
+"""
+
 INSIGHT_SYSTEM = """你是链上业务分析师。只使用给定数据写中文分析，不得编造数字。
 严格按以下结构输出 Markdown：
 **结论**
@@ -78,14 +126,46 @@ INSIGHT_USER = """用户问题：{question}
 {attribution_table}
 """
 
+INSIGHT_SYSTEM_EN = """You are an on-chain business analyst. Use only the supplied data; never invent numbers.
+Output Markdown in exactly this structure:
+**Conclusion**
+1-2 sentences, conclusion first, including the key magnitude of change.
 
-def router_messages(question: str, registry: SemanticRegistry) -> list[dict[str, str]]:
+**Evidence**
+2-4 bullets citing concrete values (current, comparison, change %) and naming the largest drag/driver dimension.
+
+**Recommendations**
+2-3 actionable recommendations mapped to the drivers found in the data.
+
+No generic filler and do not repeat the raw tables."""
+
+INSIGHT_USER_EN = """User question: {question}
+Metric: {metric_label} ({metric_key})
+Time window: {window_label} ({start} to {end})
+Current value: {current_value}
+Previous period: {previous_value}
+Change: {change_pct}
+
+Daily / dimensional data:
+{data_table}
+
+Attribution:
+{attribution_table}
+"""
+
+
+def router_messages(
+    question: str, registry: SemanticRegistry, language: str = "zh"
+) -> list[dict[str, str]]:
+    english = language == "en"
     return [
         {
             "role": "system",
-            "content": ROUTER_SYSTEM.format(
-                catalog=registry.catalog_text(),
-                time_ranges=registry.time_range_catalog_text(),
+            "content": (ROUTER_SYSTEM_EN if english else ROUTER_SYSTEM).format(
+                catalog=registry.catalog_text("en" if english else "zh"),
+                time_ranges=registry.time_range_catalog_text(
+                    "en" if english else "zh"
+                ),
             ),
         },
         {"role": "user", "content": question},
@@ -101,27 +181,48 @@ def codegen_messages(
     registry: SemanticRegistry,
     previous_sql: str | None = None,
     error: str | None = None,
+    language: str = "zh",
 ) -> list[dict[str, str]]:
+    english = language == "en"
     if dimension == "trade_date":
-        requirement = (
-            f"按 {metric.time_column} 逐日聚合，输出列 {dimension} 与 "
-            f"{metric.value_column}，按日期升序。"
-        )
+        if english:
+            requirement = (
+                f"Aggregate by {metric.time_column} per day, output columns "
+                f"{dimension} and {metric.value_column}, ordered by date ascending."
+            )
+        else:
+            requirement = (
+                f"按 {metric.time_column} 逐日聚合，输出列 {dimension} 与 "
+                f"{metric.value_column}，按日期升序。"
+            )
     else:
-        requirement = (
-            f"按维度 {dimension} 聚合，输出列 {dimension} 与 "
-            f"{metric.value_column}，按指标值降序，最多 20 行。"
-        )
+        if english:
+            requirement = (
+                f"Aggregate by dimension {dimension}, output columns {dimension} "
+                f"and {metric.value_column}, ordered by metric value descending, "
+                "at most 20 rows."
+            )
+        else:
+            requirement = (
+                f"按维度 {dimension} 聚合，输出列 {dimension} 与 "
+                f"{metric.value_column}，按指标值降序，最多 20 行。"
+            )
     repair = ""
     if previous_sql and error:
-        repair = REPAIR_BLOCK.format(previous_sql=previous_sql, error=error)
+        repair = (REPAIR_BLOCK_EN if english else REPAIR_BLOCK).format(
+            previous_sql=previous_sql, error=error
+        )
+    system_prompt = CODEGEN_SYSTEM_EN if english else CODEGEN_SYSTEM
+    user_template = CODEGEN_USER_EN if english else CODEGEN_USER
     return [
-        {"role": "system", "content": CODEGEN_SYSTEM},
+        {"role": "system", "content": system_prompt},
         {
             "role": "user",
-            "content": CODEGEN_USER.format(
+            "content": user_template.format(
                 question=question,
-                metric_reference=registry.sql_reference(metric),
+                metric_reference=registry.sql_reference(
+                    metric, "en" if english else "zh"
+                ),
                 window_label=window.label,
                 start=window.start.isoformat(),
                 end=window.end.isoformat(),
@@ -142,14 +243,18 @@ def insight_messages(
     current_value: str,
     previous_value: str,
     change_pct: str,
+    language: str = "zh",
 ) -> list[dict[str, str]]:
+    english = language == "en"
+    system_prompt = INSIGHT_SYSTEM_EN if english else INSIGHT_SYSTEM
+    user_template = INSIGHT_USER_EN if english else INSIGHT_USER
     return [
-        {"role": "system", "content": INSIGHT_SYSTEM},
+        {"role": "system", "content": system_prompt},
         {
             "role": "user",
-            "content": INSIGHT_USER.format(
+            "content": user_template.format(
                 question=question,
-                metric_label=metric.label,
+                metric_label=metric.display_label("en" if english else "zh"),
                 metric_key=metric.key,
                 window_label=window.label,
                 start=window.start.isoformat(),

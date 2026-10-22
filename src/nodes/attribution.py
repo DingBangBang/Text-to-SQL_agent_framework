@@ -13,6 +13,7 @@ from typing import Any
 import pandas as pd
 
 from ..db import execute_query
+from ..i18n import tr
 from ..semantic import TimeWindow
 from ..state import AgentContext, trace_entry
 
@@ -89,18 +90,29 @@ def attribution_node(state: dict[str, Any], *, ctx: AgentContext) -> dict[str, A
             negative = combined[combined["change_value"] < 0]
             if not negative.empty:
                 worst = negative.sort_values("change_value").iloc[0]
-                top_driver = (
+                top_driver = tr(
+                    ctx.language,
                     f"，最大拖累 {worst['_dimension']}={worst['dimension_value']}"
-                    f"（{worst['change_value']:,.2f}）"
+                    f"（{worst['change_value']:,.2f}）",
+                    f", largest drag {worst['_dimension']}={worst['dimension_value']}"
+                    f" ({worst['change_value']:,.2f})",
                 )
 
     pct_text = f"{change_pct:+.2f}%" if change_pct is not None else "N/A"
-    detail = (
+    detail = tr(
+        ctx.language,
         f"{window.label}: {current_total:,.2f} vs 上一周期 {previous_total:,.2f}"
-        f"（{pct_text}）；拆解维度：{', '.join(breakdowns) or '无'}{top_driver}"
+        f"（{pct_text}）；拆解维度：{', '.join(breakdowns) or '无'}{top_driver}",
+        f"{window.label}: {current_total:,.2f} vs previous "
+        f"{previous_total:,.2f} ({pct_text}); breakdown: "
+        f"{', '.join(breakdowns) or 'none'}{top_driver}",
     )
     if warnings:
-        detail += f"；{len(warnings)} 个维度失败已跳过"
+        detail += tr(
+            ctx.language,
+            f"；{len(warnings)} 个维度失败已跳过",
+            f"; {len(warnings)} dimension(s) failed and were skipped",
+        )
 
     return {
         "attribution": attribution,

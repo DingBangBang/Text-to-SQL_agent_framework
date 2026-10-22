@@ -8,9 +8,15 @@ from src.mock_llm import MockLLM
 from conftest import TEST_TODAY
 
 
-def _run(question: str, settings, scripted=None):
+def _run(question: str, settings, scripted=None, language="zh"):
     llm = MockLLM(settings, scripted=scripted)
-    return run_agent(question, settings=settings, llm=llm, today=TEST_TODAY)
+    return run_agent(
+        question,
+        settings=settings,
+        llm=llm,
+        today=TEST_TODAY,
+        language=language,
+    )
 
 
 def test_query_flow_router_to_insight(settings):
@@ -139,3 +145,50 @@ def test_bad_router_json_falls_back_without_extra_api_call(settings):
     assert state["route"]["metric"] == "trade_volume"
     tasks = [call["task"] for call in meta["calls"]]
     assert tasks == ["router", "codegen", "insight"]  # no router retry
+
+
+def test_english_attribution_pipeline_is_fully_english(settings):
+    state, meta = _run(
+        "Why did on-chain volume drop last week?",
+        settings,
+        language="en",
+    )
+
+    assert state["status"] == "completed"
+    assert state["route"]["metric"] == "onchain_volume"
+    assert state["route"]["action"] == "attribution"
+    assert state["route"]["time_range"] == "last_week"
+
+    assert "**Conclusion**" in state["insight"]
+    assert "**Evidence**" in state["insight"]
+    assert "**Recommendations**" in state["insight"]
+    assert "结论" not in state["insight"]
+    assert "asset=" in state["insight"]
+
+    trace_text = " ".join(step["detail"] for step in state["trace"])
+    assert "SQL attempt 1/4" in trace_text
+    assert "Executed successfully" in trace_text
+    assert "breakdown" in trace_text
+    assert "指标" not in trace_text
+    assert meta["mock"] is True
+
+
+def test_english_clarification_is_in_english(settings):
+    state, _ = _run("Give me a summary", settings, language="en")
+
+    assert state["needs_clarification"] is True
+    assert "Which metric" in state["clarification"]
+    assert "请问" not in state["clarification"]
+
+
+def test_english_query_pipeline(settings):
+    state, _ = _run(
+        "How many active users were there last week?",
+        settings,
+        language="en",
+    )
+
+    assert state["status"] == "completed"
+    assert state["route"]["metric"] == "active_users"
+    assert state["route"]["action"] == "query"
+    assert "**Conclusion**" in state["insight"]

@@ -51,11 +51,16 @@ class AgentContext:
     llm: BaseLLM
     schema: str = ""
     today: date = field(default_factory=date.today)
+    language: str = "zh"
 
     @property
     def max_attempts(self) -> int:
         """First attempt + ``max_sql_retries`` self-corrections."""
         return self.settings.max_sql_retries + 1
+
+    @property
+    def is_english(self) -> bool:
+        return self.language == "en"
 
 
 def trace_entry(node: str, detail: str) -> dict[str, str]:

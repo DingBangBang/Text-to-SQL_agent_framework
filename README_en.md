@@ -44,6 +44,7 @@ Most Text-to-SQL demos only answer the first question, and they stuff raw data, 
 | Local warehouse | DuckDB with 100k simulated trades over 30 days | No external data service required |
 | Cost guardrails | tiktoken + cost meter + per-run cap | Typically **under $0.001** per real run |
 | Interactive UI | Streamlit + Plotly | Thinking trace, SQL, chart, and insight shown step by step |
+| Bilingual UI | One-click switch for UI copy, examples, routing trace, attribution, and insight; backend prompts/Mock switch too | Business users can demo fully in Chinese or English |
 | Offline tests | MockLLM + small DuckDB fixture | Full test suite with zero API calls |
 
 ## 3. System Architecture
@@ -219,9 +220,11 @@ make dashboard
 ```text
 Text-to-SQL_agent_framework/
 ├── app/
-│   └── dashboard.py              # Streamlit: schema/metric sidebar + step-by-step results
+│   ├── dashboard.py              # Streamlit: bilingual UI + step-by-step results
+│   └── ui_text.py                # Chinese/English dashboard copy and examples
 ├── src/
 │   ├── config.py                 # Settings: env, budgets, prices, paths
+│   ├── i18n.py                   # language + dimension labels
 │   ├── token_budget.py           # tiktoken counting + forced truncation
 │   ├── llm.py                    # DeepSeek client + cost meter + JSON parsing
 │   ├── mock_llm.py               # deterministic MockLLM (zero cost)
@@ -342,16 +345,16 @@ Tests use a small DuckDB fixture (800 users / 12,000 trades / 30 days) and a fix
 
 | Test file | Coverage | Cases | Result |
 | --- | --- | ---: | --- |
-| `test_pipeline.py` | Router→Insight flow, attribution, clarification, SQL repair, 3-retry cap, bad-JSON fallback | 7 | ✅ |
-| `test_semantic.py` | Synonym mapping, calendar windows, template SQL, pinned-dimension skip, invalid mode | 9 | ✅ |
+| `test_pipeline.py` | Router→Insight flow, attribution, clarification, SQL repair, 3-retry cap, bad-JSON fallback, full English flow | 10 | ✅ |
+| `test_semantic.py` | Synonym mapping, calendar windows, template SQL, pinned-dimension skip, invalid mode, English labels | 10 | ✅ |
 | `test_db_sandbox.py` | Read-only queries, 9 dangerous SQL rejections, data integrity, row cap, schema snapshot | 14 | ✅ |
 | `test_token_budget.py` | Token counting, hard 3,000 ceiling, oversized truncation, head/tail retention | 5 | ✅ |
 | `test_reporting.py` | All HTML sections, JSON export, Markdown money/percent formatting, SVG placeholder | 4 | ✅ |
-| `test_dashboard.py` | Streamlit AppTest: page render + clicking an example question end-to-end | 2 | ✅ |
+| `test_dashboard.py` | Streamlit AppTest: Chinese render, example question end-to-end, switch to English and run | 3 | ✅ |
 
 ```text
 $ pytest
-41 passed, 1 warning in 1.64s
+46 passed, 1 warning in 2.19s
 ```
 
 > The whole suite uses MockLLM; real API calls: **0**.
@@ -405,8 +408,9 @@ The UI follows the agent's decision order instead of showing a black-box answer:
 4. **③ Result data**: Plotly line/bar chart + raw aggregate table.
 5. **④ Attribution**: current vs previous period by asset and other informative dimensions (dimensions pinned by the metric are skipped).
 6. **⑤ Insight**: conclusion-first narrative.
+7. **Language switch**: the `Language / 语言` control at the top of the sidebar switches the entire UI and agent output (examples, clarification questions, execution trace, attribution dimension names, insight). Switching clears the current conversation so Chinese and English never mix.
 
-The sidebar always shows the local schema (with row counts), `metrics.yaml` definitions, cost guardrails, example questions, and a Mock/DeepSeek switch.
+The sidebar always shows the local schema (with row counts), `metrics.yaml` definitions, cost guardrails, example questions, and a Mock/DeepSeek switch. Metric definitions and examples follow the selected language.
 
 ```bash
 make dashboard

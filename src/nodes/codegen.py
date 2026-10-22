@@ -6,6 +6,7 @@ from datetime import date
 from typing import Any
 
 from ..db import clean_sql
+from ..i18n import tr
 from ..llm import LLMError
 from ..prompts import codegen_messages
 from ..semantic import TimeWindow
@@ -50,6 +51,7 @@ def codegen_node(state: dict[str, Any], *, ctx: AgentContext) -> dict[str, Any]:
                 registry=ctx.registry,
                 previous_sql=previous_sql,
                 error=error,
+                language=ctx.language,
             ),
             task="codegen",
             context={
@@ -65,13 +67,29 @@ def codegen_node(state: dict[str, Any], *, ctx: AgentContext) -> dict[str, Any]:
             sql = candidate
             source = "mock-rules" if response.mock else "deepseek"
         else:
-            note = "（模型返回空 SQL，已回退到语义模板）"
+            note = tr(
+                ctx.language,
+                "（模型返回空 SQL，已回退到语义模板）",
+                "(model returned empty SQL; fell back to the semantic template)",
+            )
     except LLMError as exc:
-        note = f"（LLM 不可用，已回退到语义模板：{type(exc).__name__}）"
+        note = tr(
+            ctx.language,
+            f"（LLM 不可用，已回退到语义模板：{type(exc).__name__}）",
+            f"(LLM unavailable; fell back to the semantic template: {type(exc).__name__})",
+        )
 
-    detail = f"第 {attempt}/{ctx.max_attempts} 次生成 SQL，来源={source}"
+    detail = tr(
+        ctx.language,
+        f"第 {attempt}/{ctx.max_attempts} 次生成 SQL，来源={source}",
+        f"SQL attempt {attempt}/{ctx.max_attempts}, source={source}",
+    )
     if error:
-        detail += f"；根据报错修复：{error[:120]}"
+        detail += tr(
+            ctx.language,
+            f"；根据报错修复：{error[:120]}",
+            f"; repairing from error: {error[:120]}",
+        )
     if note:
         detail += f" {note}"
 

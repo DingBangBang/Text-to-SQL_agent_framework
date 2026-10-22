@@ -11,6 +11,7 @@ from langgraph.graph import END, START, StateGraph
 
 from .config import Settings
 from .db import schema_ddl
+from .i18n import normalize_language
 from .llm import build_llm
 from .nodes.attribution import attribution_node
 from .nodes.codegen import codegen_node
@@ -38,6 +39,7 @@ def build_context(
     llm: Any | None = None,
     registry: SemanticRegistry | None = None,
     today: date | None = None,
+    language: str = "zh",
 ) -> AgentContext:
     settings = settings or Settings.from_env()
     registry = registry or SemanticRegistry.load(settings.metrics_path)
@@ -49,6 +51,7 @@ def build_context(
         llm=llm,
         schema=schema,
         today=today or date.today(),
+        language=normalize_language(language),
     )
 
 
@@ -59,9 +62,12 @@ def build_graph(
     registry: SemanticRegistry | None = None,
     today: date | None = None,
     checkpointer: Any | None = None,
+    language: str = "zh",
 ):
     """Compile the state machine. Tests inject MockLLM here to stay offline."""
-    ctx = build_context(settings, llm=llm, registry=registry, today=today)
+    ctx = build_context(
+        settings, llm=llm, registry=registry, today=today, language=language
+    )
 
     builder = StateGraph(AgentState)
     builder.add_node("router", partial(router_node, ctx=ctx))
@@ -105,10 +111,15 @@ def run_agent(
     registry: SemanticRegistry | None = None,
     today: date | None = None,
     graph: Any | None = None,
+    language: str = "zh",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Execute one full agent run and return ``(state, run_meta)``."""
     compiled = graph or build_graph(
-        settings, llm=llm, registry=registry, today=today
+        settings,
+        llm=llm,
+        registry=registry,
+        today=today,
+        language=language,
     )
     started = time.perf_counter()
     state = compiled.invoke(

@@ -42,3 +42,37 @@ def test_dashboard_runs_example_question(settings, monkeypatch):
     assert any("结论" in block.value for block in app.markdown)
     assert any("智能洞察报告" in expander.label for expander in app.expander)
 
+
+def test_dashboard_switches_to_english_and_runs(settings, monkeypatch):
+    monkeypatch.setenv("DUCKDB_PATH", str(settings.db_path))
+    monkeypatch.setenv("METRICS_PATH", str(settings.metrics_path))
+    monkeypatch.setenv("LLM_MODE", "mock")
+
+    app = AppTest.from_file(str(ROOT / "app" / "dashboard.py"), default_timeout=120)
+    app.run()
+
+    language_radio = next(
+        radio for radio in app.sidebar.radio if radio.label == "Language / 语言"
+    )
+    language_radio.set_value("English").run()
+
+    assert not app.exception
+    assert any("Business Analytics Agent" in title.value for title in app.title)
+    assert any(
+        "Metric definitions" in header.value for header in app.sidebar.subheader
+    )
+    assert any("Cost guardrails" in header.value for header in app.sidebar.subheader)
+
+    example = next(
+        button
+        for button in app.sidebar.button
+        if "Why did on-chain volume drop last week?" in button.label
+    )
+    example.click().run()
+
+    assert not app.exception
+    assert app.session_state["runs"]
+    assert any("**Conclusion**" in block.value for block in app.markdown)
+    assert any("AI insight report" in expander.label for expander in app.expander)
+    assert not any("结论" in block.value for block in app.markdown)
+

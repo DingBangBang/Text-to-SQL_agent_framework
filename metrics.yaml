@@ -10,31 +10,39 @@ default_time_range: last_7_days
 time_ranges:
   today:
     label: 今天
+    label_en: Today
     mode: trailing
     days: 1
   yesterday:
     label: 昨天
+    label_en: Yesterday
     mode: yesterday
   last_7_days:
     label: 过去7天
+    label_en: Last 7 days
     mode: trailing
     days: 7
   last_14_days:
     label: 过去14天
+    label_en: Last 14 days
     mode: trailing
     days: 14
   last_30_days:
     label: 过去30天
+    label_en: Last 30 days
     mode: trailing
     days: 30
   last_week:
     label: 上周
+    label_en: Last week
     mode: previous_week
   this_month:
     label: 本月
+    label_en: This month
     mode: current_month
   last_month:
     label: 上月
+    label_en: Last month
     mode: previous_month
 
 tables:
@@ -61,7 +69,9 @@ tables:
 metrics:
   active_users:
     label: 活跃用户
+    label_en: Active users
     description: 统计窗口内有交易记录的独立用户数（去重 user_id）
+    description_en: Distinct users with at least one trade in the window
     table: trades
     alias: t
     time_column: trade_date
@@ -87,7 +97,9 @@ metrics:
 
   trade_volume:
     label: 交易量
+    label_en: Trading volume
     description: 统计窗口内全部交易的名义成交额（USD）
+    description_en: Notional USD volume of all trades in the window
     table: trades
     alias: t
     time_column: trade_date
@@ -113,7 +125,9 @@ metrics:
 
   onchain_volume:
     label: 链上交易量
+    label_en: On-chain volume
     description: 统计窗口内 chain_type = 'onchain' 的交易量（USD）
+    description_en: USD volume of trades where chain_type = 'onchain'
     table: trades
     alias: t
     time_column: trade_date
@@ -140,7 +154,9 @@ metrics:
 
   fee_revenue:
     label: 手续费收入
+    label_en: Fee revenue
     description: 统计窗口内平台收取的手续费总额（USD）
+    description_en: Total platform fees collected in USD during the window
     table: trades
     alias: t
     time_column: trade_date
@@ -166,7 +182,9 @@ metrics:
 
   avg_trade_size:
     label: 平均单笔交易额
+    label_en: Average trade size
     description: 统计窗口内单笔交易的平均名义金额（USD）
+    description_en: Average notional USD size per trade in the window
     table: trades
     alias: t
     time_column: trade_date

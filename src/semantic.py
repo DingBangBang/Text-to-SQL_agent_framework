@@ -39,10 +39,22 @@ class Metric:
     aggregation: str = "sum"
     synonyms: tuple[str, ...] = ()
     dimensions: dict[str, Dimension] = field(default_factory=dict)
+    label_en: str = ""
+    description_en: str = ""
 
     @property
     def time_expr(self) -> str:
         return f"{self.alias}.{self.time_column}"
+
+    def display_label(self, language: str = "zh") -> str:
+        if language == "en":
+            return self.label_en or self.label
+        return self.label
+
+    def display_description(self, language: str = "zh") -> str:
+        if language == "en":
+            return self.description_en or self.description
+        return self.description
 
 
 @dataclass(frozen=True)
@@ -137,6 +149,8 @@ class SemanticRegistry:
                 aggregation=item.get("aggregation", "sum"),
                 synonyms=tuple(item.get("synonyms") or ()),
                 dimensions=dims,
+                label_en=item.get("label_en", ""),
+                description_en=item.get("description_en", ""),
             )
 
     @classmethod
@@ -161,7 +175,12 @@ class SemanticRegistry:
         haystack = text.lower().replace(" ", "")
         best: tuple[int, Metric] | None = None
         for metric in self.metrics.values():
-            candidates = {metric.key.lower(), metric.label.lower(), *metric.synonyms}
+            candidates = {
+                metric.key.lower(),
+                metric.label.lower(),
+                metric.label_en.lower(),
+                *metric.synonyms,
+            }
             for candidate in candidates:
                 needle = candidate.lower().replace(" ", "")
                 if needle and needle in haystack:
@@ -169,24 +188,41 @@ class SemanticRegistry:
                         best = (len(needle), metric)
         return best[1] if best else None
 
-    def catalog_text(self) -> str:
+    def catalog_text(self, language: str = "zh") -> str:
         lines = []
         for metric in self.metrics.values():
-            lines.append(
-                f"- {metric.key} | {metric.label} | {metric.description} "
-                f"| 单位: {metric.unit or '无'} | 同义词: {', '.join(metric.synonyms)}"
-            )
+            unit = metric.unit or ("none" if language == "en" else "无")
+            label = metric.display_label(language)
+            description = metric.display_description(language)
+            if language == "en":
+                lines.append(
+                    f"- {metric.key} | {label} | {description} "
+                    f"| unit: {unit} | synonyms: {', '.join(metric.synonyms)}"
+                )
+            else:
+                lines.append(
+                    f"- {metric.key} | {label} | {description} "
+                    f"| 单位: {unit} | 同义词: {', '.join(metric.synonyms)}"
+                )
         return "\n".join(lines)
 
-    def time_range_catalog_text(self) -> str:
-        return "\n".join(
-            f"- {key} | {spec.get('label', key)}"
-            for key, spec in self.time_range_specs.items()
-        )
+    def time_range_catalog_text(self, language: str = "zh") -> str:
+        lines = []
+        for key, spec in self.time_range_specs.items():
+            label = (
+                spec.get("label_en", spec.get("label", key))
+                if language == "en"
+                else spec.get("label", key)
+            )
+            lines.append(f"- {key} | {label}")
+        return "\n".join(lines)
 
     # -- time windows -----------------------------------------------------
     def resolve_time_range(
-        self, value: str | None, today: date | None = None
+        self,
+        value: str | None,
+        today: date | None = None,
+        language: str = "zh",
     ) -> TimeWindow | None:
         if not value:
             return None
@@ -197,7 +233,11 @@ class SemanticRegistry:
         if not spec:
             return None
         mode = spec.get("mode", "trailing")
-        label = spec.get("label", key)
+        label = (
+            spec.get("label_en", spec.get("label", key))
+            if language == "en"
+            else spec.get("label", key)
+        )
 
         if mode == "trailing":
             days = int(spec.get("days", 7))
@@ -217,12 +257,17 @@ class SemanticRegistry:
         raise TimeRangeError(f"不支持的时间窗口模式：{mode}")
 
     @staticmethod
-    def previous_window(window: TimeWindow) -> TimeWindow:
+    def previous_window(window: TimeWindow, language: str = "zh") -> TimeWindow:
         prev_end = window.start - timedelta(days=1)
         prev_start = prev_end - timedelta(days=window.days - 1)
+        label = (
+            f"Previous period ({prev_start} ~ {prev_end})"
+            if language == "en"
+            else f"上一周期（{prev_start} ~ {prev_end}）"
+        )
         return TimeWindow(
             key=f"{window.key}_prev",
-            label=f"上一周期（{prev_start} ~ {prev_end}）",
+            label=label,
             start=prev_start,
             end=prev_end,
         )
@@ -330,8 +375,24 @@ LIMIT {int(limit)}"""
                 result.append(key)
         return result
 
-    def sql_reference(self, metric: Metric) -> str:
+    def sql_reference(self, metric: Metric, language: str = "zh") -> str:
         """Human-readable contract handed to the SQL generator."""
+        if language == "en":
+            filters = " AND ".join(metric.filters) if metric.filters else "none"
+            dims = ", ".join(
+                f"{dim.key} ({dim.expr})" for dim in metric.dimensions.values()
+            )
+            return (
+                f"Metric key: {metric.key}\n"
+                f"Business definition: {metric.display_description('en')}\n"
+                f"Measure expression: {metric.expression}\n"
+                f"Source table: {metric.table} {metric.alias}\n"
+                f"Time column: {metric.time_expr}\n"
+                f"Fixed filters: {filters}\n"
+                f"Available dimensions: {dims}\n"
+                f"Output value column: {metric.value_column} "
+                f"(unit: {metric.unit or 'none'})"
+            )
         filters = " AND ".join(metric.filters) if metric.filters else "无"
         dims = ", ".join(
             f"{dim.key} ({dim.expr})" for dim in metric.dimensions.values()

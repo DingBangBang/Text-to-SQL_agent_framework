@@ -67,6 +67,7 @@ class Settings:
     price_input_cny_per_m: float = DEFAULT_PRICE_INPUT_CNY_PER_M
     price_cached_input_cny_per_m: float = DEFAULT_PRICE_CACHED_INPUT_CNY_PER_M
     price_output_cny_per_m: float = DEFAULT_PRICE_OUTPUT_CNY_PER_M
+    cny_per_usd: float = 7.1
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -92,11 +93,16 @@ class Settings:
             price_output_cny_per_m=_env_float(
                 "PRICE_OUTPUT_CNY_PER_M", DEFAULT_PRICE_OUTPUT_CNY_PER_M
             ),
+            cny_per_usd=_env_float("CNY_PER_USD", 7.1),
         )
 
     @property
     def is_live(self) -> bool:
         return self.llm_mode == "deepseek"
+
+    def cost_usd(self, cost_cny: float) -> float:
+        """Convert the internally tracked CNY cost to USD for English UI."""
+        return cost_cny / self.cny_per_usd if self.cny_per_usd else cost_cny
 
     def cost_cny(
         self, input_tokens: int, output_tokens: int, cached_input_tokens: int = 0

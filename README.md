@@ -44,6 +44,7 @@
 | 本地数仓 | DuckDB，10 万条模拟交易 / 30 天 | 零外部数据服务依赖 |
 | 成本护栏 | tiktoken + 成本计量 + 运行上限 | 单次真实运行约 ¥0.01 量级 |
 | 交互式 UI | Streamlit + Plotly | 思考过程、SQL、图表、洞察分层展示 |
+| 中英双语 | 侧栏一键切换 UI、示例问题、路由轨迹、归因与洞察；后端 Prompt/Mock 同步切换 | 业务同学可用全中文或全英文演示 |
 | 离线测试 | MockLLM + 小样本 DuckDB | 全套测试 0 API 调用 |
 
 ## 3. 系统架构
@@ -209,9 +210,11 @@ make dashboard
 ```text
 Text-to-SQL_agent_framework/
 ├── app/
-│   └── dashboard.py              # Streamlit：侧栏 Schema/口径 + 分步结果
+│   ├── dashboard.py              # Streamlit：中英双语界面 + 分步结果
+│   └── ui_text.py                # 看板中英文文案与示例问题
 ├── src/
 │   ├── config.py                 # Settings：env、预算、价格、路径
+│   ├── i18n.py                   # 中英语言与维度标签
 │   ├── token_budget.py           # tiktoken 计数与强制截断
 │   ├── llm.py                    # DeepSeek 客户端 + 成本计量 + JSON 解析
 │   ├── mock_llm.py               # 确定性 MockLLM（零成本）
@@ -332,16 +335,16 @@ pytest -q tests/test_pipeline.py -k "retry or attribution"
 
 | 测试文件 | 覆盖点 | 用例数 | 结果 |
 | --- | --- | ---: | --- |
-| `test_pipeline.py` | Router→Insight 全链路、归因、缺失信息反问、SQL 自纠错、3 次重试上限、坏 JSON 兜底 | 7 | ✅ |
-| `test_semantic.py` | 同义词映射、自然周窗口、模板 SQL、固定维度跳过、异常模式 | 9 | ✅ |
+| `test_pipeline.py` | Router→Insight 全链路、归因、缺失信息反问、SQL 自纠错、3 次重试上限、坏 JSON 兜底、英文全链路 | 10 | ✅ |
+| `test_semantic.py` | 同义词映射、自然周窗口、模板 SQL、固定维度跳过、异常模式、英文标签 | 10 | ✅ |
 | `test_db_sandbox.py` | 只读查询、9 类危险 SQL 拒绝、数据未被修改、行数上限、Schema 快照 | 14 | ✅ |
 | `test_token_budget.py` | token 计数、3000 硬上限、超大消息截断、头尾保留 | 5 | ✅ |
 | `test_reporting.py` | HTML 全部分区、JSON 序列化、Markdown 百分比/金额、SVG 占位图 | 4 | ✅ |
-| `test_dashboard.py` | Streamlit AppTest：页面渲染 + 点击示例问题跑通整条链路 | 2 | ✅ |
+| `test_dashboard.py` | Streamlit AppTest：中文渲染、示例问题全链路、中英切换后英文问答 | 3 | ✅ |
 
 ```text
 $ pytest
-41 passed, 1 warning in 1.64s
+46 passed, 1 warning in 2.19s
 ```
 
 > 测试全程使用 MockLLM，真实 API 调用次数为 **0**。
@@ -394,8 +397,9 @@ $ pytest
 4. **③ 执行数据**：Plotly 折线/柱状图 + 原始聚合表；
 5. **④ 多维归因**：按币种等维度展示当前 vs 上一周期的拆解（已被指标过滤固定的维度自动跳过）；
 6. **⑤ 智能洞察**：结论前置的分析文案。
+7. **中英切换**：侧栏顶部的 `Language / 语言` 可即时切换整套界面与 Agent 输出（含示例问题、路由反问、执行轨迹、归因维度名、洞察）；切换语言会清空当前对话，避免中英混排。
 
-侧栏固定展示：本地 Schema（含行数）、`metrics.yaml` 指标口径、成本护栏参数、示例问题，以及 Mock/DeepSeek 模式切换。
+侧栏固定展示：本地 Schema（含行数）、`metrics.yaml` 指标口径、成本护栏参数、示例问题，以及 Mock/DeepSeek 模式切换。指标口径和示例问题会随语言切换。
 
 ```bash
 make dashboard

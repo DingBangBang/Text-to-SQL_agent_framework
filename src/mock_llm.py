@@ -13,6 +13,7 @@ from datetime import date
 from typing import Any
 
 from .config import Settings
+from .i18n import tr
 from .llm import LLMResponse
 from .routing_rules import detect_time_range, is_attribution
 from .semantic import SemanticRegistry
@@ -90,26 +91,38 @@ class MockLLM:
     def _route(self, context: dict[str, Any]) -> str:
         question: str = context.get("question", "")
         registry: SemanticRegistry = context["registry"]
+        language = context.get("language", "zh")
 
         metric = registry.find_metric(question)
-        if metric is None and "链上" in question:
+        if metric is None and ("链上" in question or "onchain" in question.lower()):
             metric = registry.metrics.get("onchain_volume")
         time_key = detect_time_range(question, registry)
         action = "attribution" if is_attribution(question) else "query"
 
         clarification = ""
         if metric is None and time_key is None:
-            clarification = (
+            clarification = tr(
+                language,
                 "请问您想分析哪个指标（如交易量、链上交易量、活跃用户）"
-                "以及哪个时间范围（如过去7天、上周）？"
+                "以及哪个时间范围（如过去7天、上周）？",
+                "Which metric (e.g. trading volume, on-chain volume, active users) "
+                "and which time range (e.g. last 7 days, last week) should I analyze?",
             )
         elif metric is None:
-            clarification = (
+            clarification = tr(
+                language,
                 "请问您想分析哪个指标？目前支持交易量、链上交易量、"
-                "活跃用户、手续费收入等。"
+                "活跃用户、手续费收入等。",
+                "Which metric should I analyze? Available options include trading "
+                "volume, on-chain volume, active users, and fee revenue.",
             )
         elif time_key is None:
-            clarification = "请问您想看哪个时间范围的数据？（如过去7天、上周、过去30天）"
+            clarification = tr(
+                language,
+                "请问您想看哪个时间范围的数据？（如过去7天、上周、过去30天）",
+                "Which time range should I use? "
+                "(e.g. last 7 days, last week, last 30 days)",
+            )
 
         payload = {
             "metric": metric.key if metric else None,
@@ -128,6 +141,75 @@ class MockLLM:
         top_driver = context.get("top_driver") or {}
         positive = context.get("positive_driver") or {}
         peak = context.get("peak") or {}
+        language = context.get("language", "zh")
+
+        if language == "en":
+            lines = ["**Conclusion**", ""]
+            lines.append(
+                f"{window} {label} was **{current}**, versus {previous} "
+                f"in the previous period, a change of **{change}**."
+            )
+            if top_driver:
+                lines.append(
+                    f"The largest drag came from **{top_driver.get('name', 'unknown')}** "
+                    f"(change {top_driver.get('change', 'N/A')}), "
+                    "the main factor to explain."
+                )
+            else:
+                lines.append(
+                    "The move was spread across dimensions; no single extreme "
+                    "drag factor was identified."
+                )
+
+            lines += ["", "**Evidence**", ""]
+            lines.append(
+                f"- Current window: {window}; metric: {label}; aggregate {current}."
+            )
+            lines.append(f"- Change: {previous} → {current}, magnitude {change}.")
+            if top_driver:
+                lines.append(
+                    f"- Largest negative contributor: {top_driver.get('name')}, "
+                    f"change {top_driver.get('change')} "
+                    f"(share {top_driver.get('share', 'N/A')})."
+                )
+            if positive:
+                lines.append(
+                    f"- Positive support: {positive.get('name')}, "
+                    f"change {positive.get('change')}."
+                )
+            if peak:
+                lines.append(
+                    f"- Peak in the window: {peak.get('name', 'N/A')}, "
+                    f"value {peak.get('value', 'N/A')}."
+                )
+            lines.append(
+                "- Source: aggregated results from the local DuckDB read-only sandbox."
+            )
+
+            lines += ["", "**Recommendations**", ""]
+            if top_driver:
+                lines.append(
+                    f"1. Investigate {top_driver.get('name')}: review market depth, "
+                    "gas/bridge congestion, and campaign scheduling."
+                )
+            else:
+                lines.append(
+                    "1. Set up dimensional monitoring for this metric, starting "
+                    "with asset and chain type."
+                )
+            lines.append(
+                "2. Add a 7-day moving-average alert and trigger attribution when "
+                "the change falls below -10%."
+            )
+            lines.append(
+                "3. Record this attribution in the metric dashboard notes for "
+                "operations and market-making review."
+            )
+            lines.append("")
+            lines.append(
+                "> Generated locally by MockLLM; no external API call, zero cost."
+            )
+            return "\n".join(lines)
 
         lines = ["**结论**", ""]
         lines.append(
