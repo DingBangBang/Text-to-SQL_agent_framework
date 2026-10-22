@@ -25,7 +25,7 @@ def _fallback_insight(
         lines = [
             "**Conclusion**",
             "",
-            f"{payload['window_label']} {payload['metric_label']} was "
+            f"{payload['window_label']} {payload['metric_label']}: "
             f"{payload['current_value']}, versus {payload['previous_value']} "
             f"in the previous period ({payload['change_pct']}).",
             "",

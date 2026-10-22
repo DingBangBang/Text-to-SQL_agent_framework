@@ -39,7 +39,7 @@ def semantic_node(state: dict[str, Any], *, ctx: AgentContext) -> dict[str, Any]
         "time_column": metric.time_expr,
         "time_dimension": time_dimension,
         "value_column": metric.value_column,
-        "unit": metric.unit,
+        "unit": metric.display_unit(ctx.language),
         "filters": list(metric.filters),
         "dimensions": [
             {"key": dim.key, "label": dim.label, "type": dim.type}

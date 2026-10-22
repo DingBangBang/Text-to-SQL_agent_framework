@@ -44,7 +44,7 @@ def format_value(value: Any, unit: str = "") -> str:
     if unit == "USD" and number < 0:
         prefix = "-$"
     magnitude = absolute if unit == "USD" else number
-    if unit == "人":
+    if unit in ("人", "users"):
         return f"{number:,.0f}{suffix}"
     if absolute >= 1_000_000_000:
         return f"{prefix}{magnitude / 1_000_000_000:,.2f}B{suffix}"

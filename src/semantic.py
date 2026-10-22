@@ -56,6 +56,11 @@ class Metric:
             return self.description_en or self.description
         return self.description
 
+    def display_unit(self, language: str = "zh") -> str:
+        if language == "en" and self.unit == "人":
+            return "users"
+        return self.unit
+
 
 @dataclass(frozen=True)
 class TimeWindow:
@@ -191,7 +196,9 @@ class SemanticRegistry:
     def catalog_text(self, language: str = "zh") -> str:
         lines = []
         for metric in self.metrics.values():
-            unit = metric.unit or ("none" if language == "en" else "无")
+            unit = metric.display_unit(language) or (
+                "none" if language == "en" else "无"
+            )
             label = metric.display_label(language)
             description = metric.display_description(language)
             if language == "en":
@@ -391,7 +398,7 @@ LIMIT {int(limit)}"""
                 f"Fixed filters: {filters}\n"
                 f"Available dimensions: {dims}\n"
                 f"Output value column: {metric.value_column} "
-                f"(unit: {metric.unit or 'none'})"
+                f"(unit: {metric.display_unit('en') or 'none'})"
             )
         filters = " AND ".join(metric.filters) if metric.filters else "无"
         dims = ", ".join(

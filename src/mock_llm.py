@@ -146,7 +146,7 @@ class MockLLM:
         if language == "en":
             lines = ["**Conclusion**", ""]
             lines.append(
-                f"{window} {label} was **{current}**, versus {previous} "
+                f"{window} {label}: **{current}**, versus {previous} "
                 f"in the previous period, a change of **{change}**."
             )
             if top_driver:

@@ -354,7 +354,7 @@ Tests use a small DuckDB fixture (800 users / 12,000 trades / 30 days) and a fix
 
 ```text
 $ pytest
-46 passed, 1 warning in 2.19s
+46 passed, 1 warning in ~2s
 ```
 
 > The whole suite uses MockLLM; real API calls: **0**.

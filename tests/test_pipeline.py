@@ -191,4 +191,5 @@ def test_english_query_pipeline(settings):
     assert state["status"] == "completed"
     assert state["route"]["metric"] == "active_users"
     assert state["route"]["action"] == "query"
+    assert state["semantic"]["unit"] == "users"
     assert "**Conclusion**" in state["insight"]

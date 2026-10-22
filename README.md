@@ -344,7 +344,7 @@ pytest -q tests/test_pipeline.py -k "retry or attribution"
 
 ```text
 $ pytest
-46 passed, 1 warning in 2.19s
+46 passed, 1 warning in ~2s
 ```
 
 > 测试全程使用 MockLLM，真实 API 调用次数为 **0**。
